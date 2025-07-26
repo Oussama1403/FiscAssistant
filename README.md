@@ -1,7 +1,3 @@
-Voici le `README.md` mis à jour sans aucune référence à un PFE (projet de fin d'études). Le ton reste professionnel et prêt pour un usage public ou commercial :
-
----
-
 # 🧾 FiscAssistant – Chatbot Fiscal Multilingue 🇫🇷🇬🇧🇹🇳🇸🇦
 
 **FiscAssistant** est un assistant fiscal intelligent, multilingue, et 100% local. Il guide les utilisateurs dans leurs obligations fiscales, les aide à remplir des déclarations, effectue des calculs comme la TVA ou l’IRPP, et offre des rappels personnalisés. Ce projet est développé avec **Flask** et intègre le modèle **Nous-Hermes-2** pour un raisonnement avancé en langage naturel.
@@ -115,7 +111,3 @@ python app.py
 ## 📜 Licence
 
 Ce projet est open-source pour usage éducatif ou personnel. Pour un usage commercial, veuillez consulter les conditions de licence du modèle LLM utilisé.
-
----
-
-Souhaitez-vous que je vous génère les premiers fichiers (`app.py`, `requirements.txt`, ou l’interface) ?
