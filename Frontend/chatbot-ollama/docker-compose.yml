@@ -1,0 +1,11 @@
+version: '3.6'
+
+services:
+  chatgpt:
+    build: .
+    ports:
+      - 3000:3000
+    environment:
+      - 'DEFAULT_MODEL='
+      - 'OLLAMA_HOST='
+      - 'NEXT_PUBLIC_API_TIMEOUT=600000'
