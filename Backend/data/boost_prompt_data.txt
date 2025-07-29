@@ -1,0 +1,1 @@
+Generate 4 additional Q&A pairs for the `greeting` and `educational` categories (2 each) in English, French, Standard Arabic, and Tunisian dialect. Follow the schema: [insert schema]. Start IDs at `dialogue_197`. Use Tunisian terms like “سلام”, “شنو”. Save as `additional_dialogue.json`.
