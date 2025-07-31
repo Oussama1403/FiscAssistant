@@ -1,0 +1,332 @@
+in my ai assitant project, the dialogue_dataset.json file has Q&A entries, each Q&A refrence the id of an entry in the fiscal_data.json where source_entry is set to the respective data entry it was taken from.  i've made new fiscal data entries named temp.json here is new entries fom it with new data and new id's:
+
+---
+
+ {
+    "id": "tax_rate_corporate_banks_financial_insurance_708",
+    "category": "tax_rate",
+    "type": "Corporate Tax Rate (Banks, Financial Institutions, Insurance Companies)",
+    "description": {
+      "en": "A new increased corporate tax rate of 40% is introduced for banks, financial institutions, and insurance companies (previously subject to 35% rate).",
+      "fr": "Un nouveau taux d'impôt sur les sociétés majoré de 40% est introduit pour les banques, les institutions financières et les compagnies d'assurance (précédemment soumises à un taux de 35%).",
+      "ar": "تم إدخال معدل ضريبة شركات جديد مرتفع بنسبة 40% للبنوك والمؤسسات المالية وشركات التأمين (التي كانت تخضع سابقًا لمعدل 35%).",
+      "tn": "تم إدخال نسبة ضريبة شركات جديدة مرتفعة بـ 40% للبنوك والمؤسسات المالية وشركات التأمين (اللي كانت تخضع لنسبة 35% قبل)."
+    },
+    "value": "40% (from 35%)",
+    "applicability": {
+      "profile": [
+        "banks",
+        "financial institutions",
+        "insurance companies"
+      ],
+      "sector": [
+        "finance",
+        "insurance"
+      ],
+      "effective_date": "2025-01-01",
+      "conditions": ""
+    },
+    "details": {
+      "initial_rate": "35%"
+    },
+    "source": "Tunisia Finance Law for 2025 Published Including Corporate and Individual Tax Rate Changes - Orbitax",
+    "last_updated": "2025-07-31"
+  },
+  {
+    "id": "social_security_employee_contribution_709",
+    "category": "social_security",
+    "type": "Employee Social Security Contribution",
+    "description": {
+      "en": "Employee social security contribution will rise from 9.18% to 9.68%.",
+      "fr": "La cotisation de sécurité sociale des employés passera de 9,18% à 9,68%.",
+      "ar": "سترتفع مساهمة الضمان الاجتماعي للموظفين من 9.18% إلى 9.68%.",
+      "tn": "مساهمة الضمان الاجتماعي للموظفين باش تطلع من 9.18% لـ 9.68%."
+    },
+    "value": "9.68% (from 9.18%)",
+    "applicability": {
+      "profile": [
+        "employees"
+      ],
+      "sector": [
+        "all"
+      ],
+      "effective_date": "2025-01-01",
+      "conditions": ""
+    },
+    "details": {
+      "initial_rate": "9.18%"
+    },
+    "source": "Salaries - Increased CNSS and New IRPP Scale - Luca Pacioli",
+    "last_updated": "2025-07-31"
+  },
+  {
+    "id": "social_security_employer_contribution_710",
+    "category": "social_security",
+    "type": "Employer Social Security Contribution",
+    "description": {
+      "en": "Employer social security contribution will rise from 16.57% to 17.07%.",
+      "fr": "La cotisation de sécurité sociale des employeurs passera de 16,57% à 17,07%.",
+      "ar": "سترتفع مساهمة الضمان الاجتماعي لأصحاب العمل من 16.57% إلى 17.07%.",
+      "tn": "مساهمة الضمان الاجتماعي لأصحاب العمل باش تطلع من 16.57% لـ 17.07%."
+    },
+    "value": "17.07% (from 16.57%)",
+    "applicability": {
+      "profile": [
+        "employers"
+      ],
+      "sector": [
+        "all"
+      ],
+      "effective_date": "2025-01-01",
+      "conditions": ""
+    },
+    "details": {
+      "initial_rate": "16.57%"
+    },
+    "source": "Salaries - Increased CNSS and New IRPP Scale - Luca Pacioli",
+    "last_updated": "2025-07-31"
+  },
+  {
+    "id": "tax_rate_irpp_scale_711",
+    "category": "tax_rate",
+    "type": "Personal Income Tax (IRPP) Scale",
+    "description": {
+      "en": "A new annual Personal Income Tax (IRPP) scale will be applied to income earned from January 1, 2025. Details to be communicated later.",
+      "fr": "Une nouvelle échelle annuelle de l'impôt sur le revenu des personnes physiques (IRPP) sera appliquée aux revenus perçus à partir du 1er janvier 2025. Les détails seront communiqués ultérieurement.",
+      "ar": "سيتم تطبيق سلم جديد للضريبة السنوية على دخل الأشخاص الطبيعيين (IRPP) على الدخل المكتسب اعتبارًا من 1 يناير 2025. سيتم الإعلان عن التفاصيل لاحقًا.",
+      "tn": "سلم جديد للضريبة السنوية على دخل الأشخاص الطبيعيين (IRPP) باش يتطبق على الدخل اللي يتكسب من 1 جانفي 2025. التفاصيل باش تتعلن بعد."
+    },
+    "value": "New scale",
+    "applicability": {
+      "profile": [
+        "individuals"
+      ],
+      "sector": [
+        "all"
+      ],
+      "effective_date": "2025-01-01",
+      "conditions": ""
+    },
+    "details": {
+      "note": "Details to be communicated later by competent authorities."
+    },
+    "source": "Salaries - Increased CNSS and New IRPP Scale - Luca Pacioli",
+    "last_updated": "2025-07-31"
+  },
+  {
+    "id": "deadline_monthly_natural_persons_712",
+    "category": "deadline",
+    "type": "Monthly Declaration of Natural Persons",
+    "description": {
+      "en": "Deadline for monthly declaration of natural persons subject to income tax.",
+      "fr": "Date limite pour la déclaration mensuelle des personnes physiques soumises à l'impôt sur le revenu.",
+      "ar": "الموعد النهائي للإقرار الشهري للأشخاص الطبيعيين الخاضعين لضريبة الدخل.",
+      "tn": "آخر أجل للتصريح الشهري للأشخاص الطبيعيين الخاضعين لضريبة الدخل."
+    },
+    "value": "2025-06-16",
+    "applicability": {
+      "profile": [
+        "natural persons"
+      ],
+      "sector": [
+        "all"
+      ],
+      "effective_date": "2025-06-16",
+      "conditions": "subject to income tax"
+    },
+    "details": {},
+    "source": "June 2025 Key Dates to Remember for Your Tax Returns - Trovit",
+    "last_updated": "2025-07-31"
+  },
+  {
+    "id": "deadline_monthly_legal_entities_online_713",
+    "category": "deadline",
+    "type": "Monthly Declarations of Legal Entities (Online Systems)",
+    "description": {
+      "en": "Deadline for businesses using online declaration and payment systems to submit declarations and pay taxes.",
+      "fr": "Date limite pour les entreprises utilisant les systèmes de déclaration et de paiement en ligne pour soumettre leurs déclarations et payer leurs impôts.",
+      "ar": "الموعد النهائي للشركات التي تستخدم أنظمة الإقرار والدفع عبر الإنترنت لتقديم الإقرارات ودفع الضرائب.",
+      "tn": "آخر أجل للشركات اللي تستعمل أنظمة التصريح والدفع عبر الإنترنت لتقديم تصريحاتها ودفع ضرائبها."
+    },
+    "value": "2025-06-20",
+    "applicability": {
+      "profile": [
+        "legal entities"
+      ],
+      "sector": [
+        "all"
+      ],
+      "effective_date": "2025-06-20",
+      "conditions": "using online declaration and payment systems"
+    },
+    "details": {},
+    "source": "June 2025 Key Dates to Remember for Your Tax Returns - Trovit",
+    "last_updated": "2025-07-31"
+  },
+  {
+    "id": "deadline_provisional_advance_natural_persons_714",
+    "category": "deadline",
+    "type": "Provisional Advance Payment Declaration for Natural Persons",
+    "description": {
+      "en": "Deadline for natural persons to submit their provisional advance payment declaration.",
+      "fr": "Date limite pour les personnes physiques de soumettre leur déclaration de paiement anticipé provisoire.",
+      "ar": "الموعد النهائي للأشخاص الطبيعيين لتقديم إقرار الدفع المسبق المؤقت.",
+      "tn": "آخر أجل للأشخاص الطبيعيين لتقديم تصريح الدفع المسبق المؤقت."
+    },
+    "value": "2025-06-25",
+    "applicability": {
+      "profile": [
+        "natural persons"
+      ],
+      "sector": [
+        "all"
+      ],
+      "effective_date": "2025-06-25",
+      "conditions": ""
+    },
+    "details": {},
+    "source": "June 2025 Key Dates to Remember for Your Tax Returns - Trovit",
+    "last_updated": "2025-07-31"
+  },
+  {
+    "id": "deadline_final_corporate_tax_715",
+    "category": "deadline",
+    "type": "Final Declaration of Corporate Tax",
+    "description": {
+      "en": "Deadline for companies to submit their final declaration of corporate tax.",
+      "fr": "Date limite pour les entreprises de soumettre leur déclaration finale d'impôt sur les sociétés.",
+      "ar": "الموعد النهائي للشركات لتقديم إقرارها النهائي لضريبة الشركات.",
+      "tn": "آخر أجل للشركات لتقديم تصريحها النهائي لضريبة الشركات."
+    },
+    "value": "2025-06-25",
+    "applicability": {
+      "profile": [
+        "companies"
+      ],
+      "sector": [
+        "all"
+      ],
+      "effective_date": "2025-06-25",
+      "conditions": ""
+    },
+    "details": {},
+    "source": "June 2025 Key Dates to Remember for Your Tax Returns - Trovit",
+    "last_updated": "2025-07-31"
+  },
+  {
+    "id": "deadline_monthly_legal_entities_offline_716",
+    "category": "deadline",
+    "type": "Monthly Declarations of Legal Entities (Offline Systems)",
+    "description": {
+      "en": "Deadline for businesses not using online declaration and payment systems to submit declarations in the classical manner.",
+      "fr": "Date limite pour les entreprises n'utilisant pas les systèmes de déclaration et de paiement en ligne de soumettre leurs déclarations de manière classique.",
+      "ar": "الموعد النهائي للشركات التي لا تستخدم أنظمة الإقرار والدفع عبر الإنترنت لتقديم الإقرارات بالطريقة التقليدية.",
+      "tn": "آخر أجل للشركات اللي ما تستعملش أنظمة التصريح والدفع عبر الإنترنت لتقديم تصريحاتها بالطريقة العادية."
+    },
+    "value": "2025-06-28",
+    "applicability": {
+      "profile": [
+        "legal entities"
+      ],
+      "sector": [
+        "all"
+      ],
+      "effective_date": "2025-06-28",
+      "conditions": "not using online declaration and payment systems"
+    },
+    "details": {},
+    "source": "June 2025 Key Dates to Remember for Your Tax Returns - Trovit",
+    "last_updated": "2025-07-31"
+  },
+  {
+    "id": "deadline_provisional_advance_legal_entities_717",
+    "category": "deadline",
+    "type": "Provisional Advance Payment Declaration for Legal Entities",
+    "description": {
+      "en": "Deadline for legal entities to submit their provisional advance payment declaration.",
+      "fr": "Date limite pour les personnes morales de soumettre leur déclaration de paiement anticipé provisoire.",
+      "ar": "الموعد النهائي للكيانات القانونية لتقديم إقرار الدفع المسبق المؤقت.",
+      "tn": "آخر أجل للكيانات القانونية لتقديم تصريح الدفع المسبق المؤقت."
+    },
+    "value": "2025-06-30",
+    "applicability": {
+      "profile": [
+        "legal entities"
+      ],
+      "sector": [
+        "all"
+      ],
+      "effective_date": "2025-06-30",
+      "conditions": ""
+    },
+    "details": {},
+    "source": "June 2025 Key Dates to Remember for Your Tax Returns - Trovit",
+    "last_updated": "2025-07-31"
+  }
+  
+
+---
+
+
+these entries conatins fiscal data, so please from each entry, generate a Q&A entry in this exact dialogue structure:  
+
+  {  
+
+      "id": "dialogue_019",  
+
+      "category": "penalty",  
+
+      "question": {  
+
+        "en": "What is the penalty for overdue tax debts when a payment plan is not adhered to?",  
+
+        "fr": "Quelle est la pénalité pour les dettes fiscales en souffrance en cas de non-respect d'un plan de paiement ?",  
+
+        "ar": "ما هي الغرامة على الديون الضريبية المتأخرة عند عدم الالتزام بخطة سداد؟",  
+
+        "tn": "شنو هي الغرامة على خلاص الديون الضريبية المتأخرة كي ما يتطبقش نظام التقسيط؟"  
+
+      },  
+
+      "answer": {  
+
+        "en": "The penalty for overdue tax debts when a payment plan is not adhered to is 1.25% per month or fraction of month.",  
+
+        "fr": "La pénalité pour les dettes fiscales en souffrance en cas de non-respect d'un plan de paiement est de 1,25% par mois ou fraction de mois.",  
+
+        "ar": "الغرامة على الديون الضريبية المتأخرة عند عدم الالتزام بخطة سداد هي 1.25% شهريًا أو جزء من الشهر.",  
+
+        "tn": "الغرامة على خلاص الديون الضريبية المتأخرة كي ما يتطبقش نظام التقسيط هي 1.25% على كل شهر ولا جزء من الشهر."  
+
+      },  
+
+      "source_entry": "penalty_001",  
+
+      "intent": "query_penalty"  
+
+    }  
+
+  intents are limited "
+  query_penalty  
+
+  request_legal_steps  
+
+  greeting  
+
+  educational_query  
+
+  calculate_tax  
+
+  query_form  
+
+  request_form_guidance  
+
+  query_tax_rate  
+
+  query_deadline  
+
+  query_social_security"  
+
+  don't invent new intent.  
+
+   make sure every entry in this new q&a entries refrence its respective data by the id

@@ -1,4 +1,0 @@
-Total pairs: 206
-Category distribution: {'form': 18, 'penalty': 11, 'audit_procedure': 6, 'legal_step': 27, 'social_security': 16, 'fiscal_obligation': 33, 'tax_rate': 29, 'educational': 22, 'deadline': 34, 'greeting': 10}
-Intent distribution: {'educational_query': 22, 'query_form': 6, 'request_form_guidance': 6, 'query_penalty': 11, 'query_audit_procedure': 3, 'request_legal_steps': 26, 'query_legal_step': 1, 'query_social_security': 16, 'query_fiscal_obligation': 33, 'query_tax_rate': 24, 'calculate_tax': 5, 'query_educational': 9, 'query_deadline': 34, 'greeting': 10}
-Source entries validated

@@ -1,0 +1,21 @@
+deadline
+educational
+form
+legal_step
+penalty
+social_security
+tax_rate
+List:
+
+Here are all unique "intent" values found in your dialogue_dataset.json file:
+
+query_penalty
+request_legal_steps
+greeting
+educational_query
+calculate_tax
+query_form
+request_form_guidance
+query_tax_rate
+query_deadline
+query_social_security

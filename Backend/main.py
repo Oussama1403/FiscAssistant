@@ -2,10 +2,13 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from pydantic import BaseModel
-from langchain_community.llms import Ollama
+from langchain_ollama import OllamaLLM
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import PromptTemplate
 from langchain.output_parsers import PydanticOutputParser
+from langchain_chroma import Chroma
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_core.documents import Document
 import schedule
 import threading
 import time
@@ -14,6 +17,9 @@ from langdetect import detect, DetectorFactory
 import logging
 import json
 import re
+from langchain_community.document_loaders import JSONLoader
+from pathlib import Path
+from sentence_transformers import SentenceTransformer, util
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -35,7 +41,28 @@ app.add_middleware(
 async def preflight_handler(rest_of_path: str, request: Request):
     return JSONResponse(content={}, status_code=200)
 
-llm = Ollama(model="nous-hermes2:10.7b-solar-q3_k_m", temperature=0.3)
+# Initialize LLM with Ollama
+try:
+    llm = OllamaLLM(
+        model="nous-hermes2:10.7b-solar-q3_k_m",
+        temperature=0.3,
+        num_gpu=20,      # Offload 20 layers to GPU (tune based on VRAM)
+    )
+    logger.info("LLM initialized successfully with Ollama")
+except Exception as e:
+    logger.error(f"Failed to initialize LLM: {e}")
+    raise
+
+# Initialize ChromaDB
+embedding_function = HuggingFaceEmbeddings(model_name="paraphrase-multilingual-MiniLM-L12-v2")
+
+vectorstore = Chroma(
+    collection_name="fiscal_data",
+    persist_directory="data/chromadb",
+    embedding_function=embedding_function
+)
+logger.info("ChromaDB initialized successfully")
+
 memory = ConversationBufferMemory(return_messages=True)
 
 # Ensure consistent language detection
@@ -46,7 +73,7 @@ init_db()
 
 # Pydantic model for structured LLM output
 class ResponseOutput(BaseModel):
-    type: str  # "greeting", "vat", "profit", or "general"
+    type: str  # "greeting", "vat", "profit", "deadline", "general"
     name: str = None
     amount: float = None
     rate: float = None
@@ -54,35 +81,47 @@ class ResponseOutput(BaseModel):
     expenses: float = None
     tax_rate: float = None
     result: float = None
+    deadline: str = None
     response: str  # REQUIRED
 
-# Enhanced prompt template
+# Enhanced prompt template with tools
 response_parser = PydanticOutputParser(pydantic_object=ResponseOutput)
 prompt_template = PromptTemplate(
-    input_variables=["history", "input", "language"],
+    input_variables=["history", "input", "language", "context"],
     template="You are a professional tax assistant for Tunisia. Respond EXCLUSIVELY in {language}, using accurate, concise, and professional tax terminology. "
              "For Arabic, use conversational Tunisian Arabic with local terms (e.g., 'شنو' for 'what', 'كيفاش' for 'how', 'مرحبا' for greetings, 'تڤا' for VAT). "
              "Avoid formal Modern Standard Arabic. Do not switch languages. "
+             "Use the provided context from the fiscal knowledge base to inform your response. "
+             "Available tools: "
+             "- `calculate_vat(amount, rate)`: Computes VAT as amount * rate / 100. "
+             "- `get_tax_deadline(declaration_type, language)`: Returns deadline for declaration_type (e.g., 'vat_monthly', 'vat_quarterly', 'income_tax_annual'). "
              "Analyze the input to determine the response type: "
              "- If the user introduces their name (e.g., 'my name is Ahmed', 'je m'appelle Ahmed', 'people call me Ahmed', 'انا احمد'), extract the name and return a personalized greeting. "
-             "- If the user asks for a VAT calculation (e.g., 'Calculate VAT for 100 TND at 7%'), compute the VAT (amount * rate / 100) and return the result. "
-             "- If the user asks for a net profit calculation (e.g., 'Calculate net profit for revenue 1000 TND and expenses 400 TND'), compute the profit ((revenue - expenses) * (1 - tax_rate/100)) and return the result. "
-             "- For other queries, provide a clear and professional tax-related response. "
-             "Return a SINGLE JSON object with: {{type}} ('greeting', 'vat', 'profit', or 'general'), {{name}} (if greeting), {{amount}}/{{rate}} (if VAT), {{revenue}}/{{expenses}}/{{tax_rate}}/{{result}} (if profit), and {{response}} (the natural language answer in {language}). The {{response}} field is REQUIRED. "
-             "Example for input 'people call me Ahmed' in English: {{\"type\": \"greeting\", \"name\": \"Ahmed\", \"response\": \"Hello Ahmed! I’m your tax assistant for Tunisia. How can I assist you today?\"}} "
-             "Example for input 'je m'appelle Ahmed' in French: {{\"type\": \"greeting\", \"name\": \"Ahmed\", \"response\": \"Bonjour Ahmed ! Je suis votre assistant fiscal pour la Tunisie. Comment puis-je vous aider aujourd'hui ?\"}} "
+             "- If the user asks for a VAT calculation (e.g., 'Calculate VAT for 100 TND at 7%'), use `calculate_vat` and return the result. "
+             "- If the user asks for a net profit calculation (e.g., 'Calculate net profit for revenue 1000 TND and expenses 400 TND'), compute profit as (revenue - expenses) * (1 - tax_rate/100) and return the result. "
+             "- If the user asks for a tax deadline (e.g., 'When is the VAT deadline?'), use `get_tax_deadline` and return the result. "
+             "- For other queries, provide a clear tax-related response, incorporating context if relevant. "
+             "Return a SINGLE JSON object with: {type} ('greeting', 'vat', 'profit', 'deadline', 'general'), {name} (if greeting), {amount}/{rate}/{result} (if VAT), {revenue}/{expenses}/{tax_rate}/{result} (if profit), {deadline} (if deadline), and {response} (the natural language answer in {language}). The {response} field is REQUIRED. "
+             "Context from fiscal knowledge base:\n{context}\n"
              "Conversation history:\n{history}\nUser: {input}\n\n{format_instructions}",
     partial_variables={"format_instructions": response_parser.get_format_instructions()}
 )
 
-# Fallback prompt template (simpler, no JSON requirement)
+# Fallback prompt (no JSON requirement)
 fallback_prompt_template = PromptTemplate(
-    input_variables=["history", "input", "language"],
-    template="You are a professional tax assistant for Tunisia. Respond EXCLUSIVELY in {language}, using accurate, concise, and professional tax terminology. "
-             "For Arabic, use conversational Tunisian Arabic with local terms (e.g., 'شنو' for 'what', 'كيفاش' for 'how', 'مرحبا' for greetings, 'تڤا' for VAT). "
+    input_variables=["history", "input", "language", "context"],
+    template="You are a professional tax assistant for Tunisia. Respond EXCLUSIVELY in {language}, using accurate, conversational tax terminology. "
+             "For Arabic, use Tunisian Arabic with local terms (e.g., 'شنو' for 'what', 'كيفاش' for 'how', 'مرحبا' for greetings, 'تڤا' for VAT). "
              "Avoid formal Modern Standard Arabic. Do not switch languages. "
-             "For name introductions (e.g., 'my name is Ahmed', 'je m'appelle Ahmed', 'people call me Ahmed', 'انا احمد'), extract the name and respond with a personalized greeting. "
-             "For other queries, provide a clear and professional tax-related response. "
+             "Use the provided context from the fiscal knowledge base to inform your response. "
+             "Available tools: "
+             "- `calculate_vat(amount, rate)`: Computes VAT as amount * rate / 100. "
+             "- `get_tax_deadline(declaration_type, language)`: Returns deadline for declaration_type (e.g., 'vat_monthly', 'vat_quarterly', 'income_tax_annual'). "
+             "For name introductions (e.g., 'my name is Ahmed', 'je m'appelle Ahmed', 'people call me Ahmed', 'انا احمد'), respond with a personalized greeting. "
+             "- For VAT calculations, use `calculate_vat`. "
+             "- For tax deadlines, use `get_tax_deadline`. "
+             "- For other queries, provide a clear tax-related response. "
+             "Context from fiscal knowledge base:\n{context}\n"
              "Conversation history:\n{history}\nUser: {input}"
 )
 
@@ -97,42 +136,140 @@ class ReminderInput(BaseModel):
     deadline: str
     user_id: str = "default_user"
 
-# Language detection
+def load_dialogue_dataset():
+    dataset_path = "C:/Users/oussa/Documents/WORK/AI/FiscAssistant/Backend/data/dialogue_dataset.json"
+    if not Path(dataset_path).exists():
+        logger.error(f"Dataset not found: {dataset_path}")
+        return
+    try:
+        with open(dataset_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        
+        documents = []
+        for entry in data:
+            entry_id = entry.get("id", "")
+            category = entry.get("category", "")
+            intent = entry.get("intent", "")
+            for lang in ["en", "fr", "ar", "tn"]:
+                question = entry.get("question", {}).get(lang, "")
+                answer = entry.get("answer", {}).get(lang, "")
+                if question and answer:
+                    doc_content = f"Question: {question}\nAnswer: {answer}"
+                    documents.append(
+                        Document(
+                            page_content=doc_content,
+                            metadata={
+                                "id": entry_id,
+                                "language": lang,
+                                "category": category,
+                                "intent": intent
+                            }
+                        )
+                    )
+        vectorstore.add_documents(documents)
+        logger.info(f"Loaded {len(documents)} documents into ChromaDB from dialogue_dataset.json")
+    except Exception as e:
+        logger.error(f"Failed to load dataset: {e}")
+
+# Call after Chroma initialization
+load_dialogue_dataset()
+
+
+def calculate_vat(amount: float, rate: float) -> float:
+    """Calculate VAT: amount * rate / 100."""
+    return amount * rate / 100
+
+def get_tax_deadline(declaration_type: str, language: str = "en") -> str:
+    """Return tax deadline for declaration_type."""
+    deadlines = {
+        "vat_monthly": "15th of next month",
+        "vat_quarterly": "20th of April, July, October, January",
+        "income_tax_annual": "April 30th"
+    }
+    translations = {
+        "en": deadlines,
+        "fr": {
+            "vat_monthly": "15 du mois suivant",
+            "vat_quarterly": "20 avril, juillet, octobre, janvier",
+            "income_tax_annual": "30 avril"
+        },
+        "ar": {
+            "vat_monthly": "15 من الشهر القادم",
+            "vat_quarterly": "20 أفريل، جويلية، أكتوبر، جانفي",
+            "income_tax_annual": "30 أفريل"
+        }
+    }
+    return translations.get(language, deadlines).get(declaration_type, "Unknown deadline")    
+
+# Precompute reference embeddings at startup
+REFERENCE_PHRASES = {
+    "en": [
+        "Hello, how can I help you with taxes?",
+        "What is the VAT rate in Tunisia?",
+        "My name is John, I need tax advice."
+    ],
+    "fr": [
+        "Bonjour, comment puis-je vous aider avec les impôts ?",
+        "Quel est le taux de TVA en Tunisie ?",
+        "Je m'appelle Marie, j'ai besoin de conseils fiscaux."
+    ],
+    "ar": [
+        "مرحبا، كيف يمكنني مساعدتك في الضرائب؟",
+        "ما هو معدل الضريبة على القيمة المضافة في تونس؟",
+        "اسمي أحمد، أحتاج إلى نصيحة ضريبية."
+    ],
+    "tn": [
+        "مرحبا، كيفاش نقدر نساعدك في الضرائب؟",
+        "شنو معدل تڤا في تونس؟",
+        "انا سميتي أحمد، محتاج نصيحة في الضرائب."
+    ]
+}
+
+# Initialize SentenceTransformer for language detection
+language_model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+REFERENCE_EMBEDDINGS = {
+    lang: language_model.encode(phrases, convert_to_tensor=True)
+    for lang, phrases in REFERENCE_PHRASES.items()
+}
+
 def detect_language(message: str, specified_language: str) -> str:
-    if specified_language in ["fr", "en", "ar"]:
+    """
+    Detect the language of the input message using embedding-based cosine similarity.
+    Args:
+        message: User input string.
+        specified_language: Language specified by user (if any).
+    Returns:
+        Detected language code ('en', 'fr', 'ar', 'tn').
+    """
+    if specified_language in ["en", "fr", "ar", "tn"]:
         logger.info(f"Using specified language: {specified_language}")
         return specified_language
-    
-    normalized_message = " ".join(message.lower().strip().split())
-    french_keywords = ["je", "m'appelle", "bonjour", "salut", "tva", "impôt", "société", "entrepreneur", "suis", "appelle"]
-    english_keywords = ["my", "name", "is", "hello", "hi", "what", "how", "tax", "vat", "profit", "people", "call", "me"]
-    arabic_keywords = ["مرحبا", "شنو", "ضرائب", "تكلفة", "اسمي", "احمد"]
-    
-    french_score = sum(1 for keyword in french_keywords if keyword in normalized_message)
-    english_score = sum(1 for keyword in english_keywords if keyword in normalized_message)
-    arabic_score = sum(1 for keyword in arabic_keywords if keyword in normalized_message) or any(char in normalized_message for char in "ابتثجحخدذرزسشص")
 
-    if english_score >= max(french_score, arabic_score):
-        logger.info(f"Detected English via keywords: {normalized_message}")
-        return "en"
-    elif french_score >= max(english_score, arabic_score):
-        logger.info(f"Detected French via keywords: {normalized_message}")
-        return "fr"
-    elif arabic_score > 0:
-        logger.info(f"Detected Arabic via keywords/characters: {normalized_message}")
-        return "ar"
-    
     try:
-        lang = detect(normalized_message)
-        logger.info(f"Langdetect result: {lang} for message: {normalized_message}")
-        if lang in ["fr", "en", "ar"]:
-            return lang
-        if lang.startswith("ar"):
-            return "ar"
-        return "en" if "people" in normalized_message or "call" in normalized_message else "fr"
+        # Encode user input
+        input_embedding = language_model.encode([message], convert_to_tensor=True)
+        
+        # Compute cosine similarity with reference embeddings
+        max_similarity = -1.0
+        detected_language = "en"  # Default fallback
+        for lang, ref_embeddings in REFERENCE_EMBEDDINGS.items():
+            similarities = util.cos_sim(input_embedding, ref_embeddings)[0]
+            avg_similarity = similarities.mean().item()
+            logger.info(f"Language {lang} similarity: {avg_similarity:.4f}")
+            if avg_similarity > max_similarity:
+                max_similarity = avg_similarity
+                detected_language = lang
+        
+        # Threshold to avoid misclassification
+        if max_similarity < 0.3:  # Adjustable threshold
+            logger.warning(f"Low similarity score ({max_similarity:.4f}), defaulting to 'en'")
+            return "en"
+        
+        logger.info(f"Detected language: {detected_language} (score: {max_similarity:.4f})")
+        return detected_language
     except Exception as e:
-        logger.error(f"Langdetect error: {e}, defaulting to English if 'people' or 'call' present, else French")
-        return "en" if "people" in normalized_message or "call" in normalized_message else "fr"
+        logger.error(f"Embedding-based language detection error: {e}, defaulting to 'en'")
+        return "en"
 
 # Profile detection
 def detect_profile(message: str) -> str:
@@ -144,7 +281,6 @@ def detect_profile(message: str) -> str:
 
 # Extract JSON from output
 def extract_json_output(raw_output: str, user_input: str) -> dict:
-    # Look for JSON object matching the input
     json_pattern = r'\{[^}]*"type"\s*:\s*"[^"]*"\s*,\s*"[^"]*"\s*:\s*[^}]*\}'
     matches = re.findall(json_pattern, raw_output)
     for match in matches:
@@ -158,7 +294,6 @@ def extract_json_output(raw_output: str, user_input: str) -> dict:
                 return parsed
         except json.JSONDecodeError:
             continue
-    # Fallback: Try parsing entire output
     try:
         parsed = json.loads(raw_output.strip())
         return parsed
@@ -185,14 +320,24 @@ async def chat(input: ChatInput):
     history = get_conversation_history(user_id)
     history_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in history])
 
+    # Retrieve relevant context from ChromaDB
+    context = ""
+    try:
+        results = vectorstore.similarity_search(user_input, k=3)
+        context = "\n".join([f"Document {i+1}: {doc.page_content} (ID: {doc.metadata['id']})" for i, doc in enumerate(results)])
+        logger.info(f"Retrieved context: {context}")
+    except Exception as e:
+        logger.error(f"ChromaDB retrieval error: {e}")
+        context = "No relevant fiscal data found."
+
     # Save user input
     save_conversation(user_id, "user", user_input, language)
 
     # LLM response with structured output
     chain = prompt_template | llm | response_parser
     try:
-        # Format prompt
-        formatted_prompt = prompt_template.format(history=history_text, input=user_input, language=language)
+        # Format prompt with context
+        formatted_prompt = prompt_template.format(history=history_text, input=user_input, language=language, context=context)
         # Get raw LLM output
         raw_output = llm.invoke(formatted_prompt)
         logger.info(f"Raw LLM output: {raw_output}")
@@ -223,7 +368,7 @@ async def chat(input: ChatInput):
                 response = {
                     "fr": f"La TVA pour {output.amount} TND à {output.rate}% est {result:.2f} TND.",
                     "en": f"The VAT for {output.amount} TND at {output.rate}% is {result:.2f} TND.",
-                    "ar": f"الضريبة على القيمة المضافة لـ {output.amount} دينار تونسي بنسبة {output.rate}% هي {result:.2f} دينار تونسي."
+                    "ar": f"تڤا لـ {output.amount} دينار تونسي بنسبة {output.rate}% هي {result:.2f} دينار تونسي."
                 }[language]
             elif output.type == "profit" and output.revenue is not None and output.expenses is not None:
                 result = output.result if output.result is not None else (output.revenue - output.expenses) * (1 - (output.tax_rate or 15) / 100)
@@ -249,7 +394,7 @@ async def chat(input: ChatInput):
         # Fallback to simpler prompt
         chain = fallback_prompt_template | llm
         try:
-            response = chain.invoke({"history": history_text, "input": user_input, "language": language})
+            response = chain.invoke({"history": history_text, "input": user_input, "language": language, "context": context})
             # Extract name for greeting in fallback
             name_pattern = r"(?:my name is|je m'appelle|people call me|انا)\s+([a-zA-Z\s]+)"
             name_match = re.search(name_pattern, user_input.lower())

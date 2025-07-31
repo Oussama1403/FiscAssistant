@@ -1,0 +1,19 @@
+python .\train_language_intent_classifier_model.py
+[nltk_data] Downloading package averaged_perceptron_tagger_eng to
+[nltk_data]     C:\Users\oussa\AppData\Roaming\nltk_data...
+[nltk_data]   Unzipping taggers\averaged_perceptron_tagger_eng.zip.
+[nltk_data] Downloading package wordnet to
+[nltk_data]     C:\Users\oussa\AppData\Roaming\nltk_data...
+[nltk_data]   Package wordnet is already up-to-date!
+[nltk_data] Downloading package omw-1.4 to
+[nltk_data]     C:\Users\oussa\AppData\Roaming\nltk_data...
+[nltk_data]   Package omw-1.4 is already up-to-date!
+{"event": "Language sample counts: Counter({'tn': 443, 'ar': 439, 'en': 435, 'fr': 431})"}
+Some weights of DistilBertForSequenceClassification were not initialized from the model checkpoint at distilbert-base-multilingual-cased and are newly initialized: ['classifier.bias', 'classifier.weight', 'pre_classifier.bias', 'pre_classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+{"event": "Language classifier trained with 1724 balanced samples"}
+{"event": "Intent sample counts: Counter({'query_tax_rate': 1632, 'query_deadline': 1248, 'educational_query': 964, 'query_penalty': 752, 'request_legal_steps': 512, 'query_social_security': 500, 'query_form': 464, 'calculate_tax': 384, 'request_form_guidance': 272, 'greeting': 176, 'query_legal_step': 16})"}      
+Some weights of DistilBertForSequenceClassification were not initialized from the model checkpoint at distilbert-base-multilingual-cased and are newly initialized: ['classifier.bias', 'classifier.weight', 'pre_classifier.bias', 'pre_classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+{"event": "Intent classifier trained with 176 balanced samples"}
+{"event": "Training completed successfully. Models saved."}

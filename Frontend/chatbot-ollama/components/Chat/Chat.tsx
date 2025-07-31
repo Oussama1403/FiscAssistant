@@ -110,7 +110,7 @@ export const Chat = memo(({ stopConversationRef }: Props) => {
         // Call FastAPI backend
         const data = await getChatResponse(
           message.content, // user message
-          "test000"  // user id logic (customize as needed)
+          "test56"  // user id logic (customize as needed)
         ) as { response: string } ;
 
         // Use the correct key from your backend response
